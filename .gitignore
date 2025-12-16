@@ -1,11 +1,75 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
+# ===== Python bytecode =====
+# __pycache__/
+# *.py[cod]
+# *$py.class
+
+
+# ===== Virtual environments =====
+
+.venv/
+
+venv/
+
+env/
+
+ENV/
+
+
+
+# # ===== uv / pip =====
+
+pip-wheel-metadata/
+
+*.egg-info/
+
+
+
+# ===== Build artifacts =====
+
 build/
+
 dist/
-wheels/
-*.egg-info
-game_state.jsonl
-# Virtual environments
-.venv
-.lock
+
+.eggs/
+
+
+
+# ===== Caches =====
+.pytest_cache/
+
+.mypy_cache/
+
+.ruff_cache/
+
+.coverage
+
+htmlcov/
+
+# ===== Logs =====
+*.log
+
+
+# ===== OS junk =====
+
+.DS_Store
+
+Thumbs.db
+
+
+
+# # ===== Editors / IDEs =====
+.vscode/
+
+.idea/
+
+*.swp
+
+*.swo
+
+
+
+# ===== Game-specific =====
+
+assets/tmp/
+savegames/
+screenshots/
