@@ -2,10 +2,13 @@
 Integration tests that test game flow and interactions.
 """
 import pytest
-import pygame
 import os
 
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+from pygame_fallback import ensure_pygame
+
+pygame = ensure_pygame()
 pygame.init()
 
 from player import Player
