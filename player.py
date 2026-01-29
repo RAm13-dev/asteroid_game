@@ -1,5 +1,7 @@
+from collections import deque
+
 import pygame
-from assets import load_sprite
+from assets import create_glow_sprite, load_sprite
 from circleshape import CircleShape
 from constants import (
     PLAYER_RADIUS,
@@ -8,6 +10,9 @@ from constants import (
     PLAYER_SHOOT_SPEED,
     PLAYER_SHOOT_COOLDOWN_SECONDS,
     PLAYER_INVINCIBILITY_SECONDS,
+    PLAYER_TRAIL_LENGTH,
+    TRAIL_MAX_ALPHA,
+    GLOW_ALPHA,
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
 )
@@ -19,8 +24,11 @@ class Player(CircleShape):
         self.rotation = 0
         self.cooldown = 0
         self.invincibility = 0.0
+        self._thrusting = False
         self._sprite = load_sprite("player", self.radius * 2)
+        self._engine_glow = create_glow_sprite(int(self.radius * 2.4), (120, 200, 255), GLOW_ALPHA)
         self._rotation_cache = {}
+        self._trail = deque(maxlen=PLAYER_TRAIL_LENGTH)
     
     def triangle(self):
         forward = pygame.Vector2(0, -1).rotate(self.rotation)
@@ -33,13 +41,15 @@ class Player(CircleShape):
     def draw(self, screen):
         # Flash when invincible (draw every other frame)
         if self.invincibility <= 0 or int(self.invincibility * 10) % 2 == 0:
+            self._draw_trail(screen)
             sprite = self._get_rotated_sprite()
             if hasattr(screen, "blit"):
                 rect = sprite.get_rect(center=self.position)
                 screen.blit(sprite, rect)
+                self._draw_engine_glow(screen)
 
-    def _get_rotated_sprite(self):
-        angle = int(self.rotation) % 360
+    def _get_rotated_sprite(self, angle=None):
+        angle = int(self.rotation if angle is None else angle) % 360
         if angle in self._rotation_cache:
             return self._rotation_cache[angle]
         if hasattr(pygame, "transform") and hasattr(pygame.transform, "rotate"):
@@ -59,10 +69,13 @@ class Player(CircleShape):
             self.rotate(-dt)
         if keys.get(pygame.K_d, False):
             self.rotate(dt)
+        self._thrusting = False
         if keys.get(pygame.K_w, False):
             self.move(dt)
+            self._thrusting = True
         if keys.get(pygame.K_s, False):
             self.move(-dt)
+            self._thrusting = True
         if keys.get(pygame.K_SPACE, False) and self.cooldown == 0:
             self.shoot()
             self.cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
@@ -79,6 +92,7 @@ class Player(CircleShape):
         
         # Wrap around screen edges
         self.wrap_position()
+        self._trail.append((self.position.copy(), self.rotation))
     
     def move(self, dt):
         unit_vector = pygame.Vector2(0, -1)
@@ -99,3 +113,25 @@ class Player(CircleShape):
         self.position = pygame.Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.velocity = pygame.Vector2(0, 0)
         self.invincibility = PLAYER_INVINCIBILITY_SECONDS
+
+    def _draw_trail(self, screen):
+        if not self._trail or not hasattr(screen, "blit"):
+            return
+        trail_items = list(self._trail)
+        count = len(trail_items)
+        for index, (pos, angle) in enumerate(trail_items):
+            alpha = int(TRAIL_MAX_ALPHA * (index + 1) / count)
+            sprite = self._get_rotated_sprite(angle)
+            trail_sprite = sprite.copy()
+            if hasattr(trail_sprite, "set_alpha"):
+                trail_sprite.set_alpha(alpha)
+            rect = trail_sprite.get_rect(center=pos)
+            screen.blit(trail_sprite, rect)
+
+    def _draw_engine_glow(self, screen):
+        if not self._thrusting or not hasattr(screen, "blit"):
+            return
+        forward = pygame.Vector2(0, -1).rotate(self.rotation)
+        glow_pos = self.position - forward * (self.radius * 0.9)
+        rect = self._engine_glow.get_rect(center=glow_pos)
+        screen.blit(self._engine_glow, rect)

@@ -3,7 +3,8 @@ import asteroidfield
 import pygame
 from constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_LIVES,
-    SCORE_SMALL_ASTEROID, SCORE_MEDIUM_ASTEROID, SCORE_LARGE_ASTEROID
+    SCORE_SMALL_ASTEROID, SCORE_MEDIUM_ASTEROID, SCORE_LARGE_ASTEROID,
+    BLUR_SCALE,
 )
 from logger import log_state
 from player import Player
@@ -61,6 +62,23 @@ def draw_pause(screen, font):
     screen.blit(overlay, (0, 0))
     screen.blit(pause_text, pause_rect)
 
+def apply_soft_blur(surface):
+    """Apply a lightweight blur by downscaling and upscaling the surface."""
+    if not hasattr(pygame, "transform") or not hasattr(pygame.transform, "smoothscale"):
+        return surface
+    width, height = surface.get_size()
+    scaled_size = (max(1, int(width * BLUR_SCALE)), max(1, int(height * BLUR_SCALE)))
+    if scaled_size == (width, height):
+        return surface
+    scaled = pygame.transform.smoothscale(surface, scaled_size)
+    return pygame.transform.smoothscale(scaled, (width, height))
+
+def render_scene(target_surface, drawable, player):
+    target_surface.fill("black")
+    for obj in drawable:
+        obj.draw(target_surface)
+    player.draw(target_surface)
+
 def reset_game(updatable):
     """Reset all game objects and return new game state"""
     # Clear all sprites
@@ -82,6 +100,7 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Asteroids")
     clock = pygame.time.Clock()
+    frame_buffer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     
     # Initialize font
     font = pygame.font.Font(None, 36)
@@ -133,10 +152,9 @@ def main():
         
         if paused:
             # Render game in background, then overlay pause text
-            screen.fill("black")
-            for obj in drawable:
-                obj.draw(screen)
-            player.draw(screen)
+            render_scene(frame_buffer, drawable, player)
+            blurred = apply_soft_blur(frame_buffer)
+            screen.blit(blurred, (0, 0))
             draw_ui(screen, lives, score, font)
             draw_pause(screen, font)
             pygame.display.flip()
@@ -172,14 +190,9 @@ def main():
                     break
         
         # Render
-        screen.fill("black")
-        
-        # Draw all game objects
-        for obj in drawable:
-            obj.draw(screen)
-        
-        # Draw player (in case it's not in drawable)
-        player.draw(screen)
+        render_scene(frame_buffer, drawable, player)
+        blurred = apply_soft_blur(frame_buffer)
+        screen.blit(blurred, (0, 0))
         
         # Draw UI
         draw_ui(screen, lives, score, font)
