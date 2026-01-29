@@ -6,9 +6,17 @@ from constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_LIVES,
     SCORE_SMALL_ASTEROID, SCORE_MEDIUM_ASTEROID, SCORE_LARGE_ASTEROID,
     BLUR_SCALE,
+    PARTICLE_BURST_ALPHA,
+    PARTICLE_BURST_COLOR,
+    PARTICLE_BURST_COUNT,
+    PARTICLE_BURST_LIFE_RANGE,
+    PARTICLE_BURST_SIZE_RANGE,
+    PARTICLE_BURST_SPEED_RANGE,
 )
 from background import build_background_layers
+from explosion import Explosion
 from logger import log_state
+from particles import Particle, ParticleBurst
 from player import Player
 from asteroid import Asteroid
 from shot import Shot
@@ -199,6 +207,9 @@ def main():
     Asteroid.containers = (asteroids, updatable, drawable)
     AsteroidField.containers = updatable
     Shot.containers = (shots, updatable, drawable)
+    Particle.containers = (updatable, drawable)
+    ParticleBurst.containers = updatable
+    Explosion.containers = (updatable, drawable)
     
     # Initialize game
     player, asteroid_field = reset_game(updatable)
@@ -272,6 +283,18 @@ def main():
                     log_event("asteroid_shot")
                     # Award points
                     score += get_asteroid_score(asteroid.radius)
+                    impact_position = asteroid.position.copy()
+                    impact_size = max(24, int(asteroid.radius * 2.4))
+                    Explosion(impact_position, impact_size)
+                    ParticleBurst(
+                        position=impact_position,
+                        count=PARTICLE_BURST_COUNT,
+                        speed_range=PARTICLE_BURST_SPEED_RANGE,
+                        life_range=PARTICLE_BURST_LIFE_RANGE,
+                        size_range=PARTICLE_BURST_SIZE_RANGE,
+                        color=PARTICLE_BURST_COLOR,
+                        alpha=PARTICLE_BURST_ALPHA,
+                    )
                     shot.kill()
                     asteroid.split()
                     break

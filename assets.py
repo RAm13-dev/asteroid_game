@@ -7,6 +7,10 @@ import pygame
 
 SPRITES_DIR = Path(__file__).resolve().parent / "assets" / "sprites"
 _SPRITE_CACHE: Dict[Tuple[str, Tuple[int, int] | None], pygame.Surface] = {}
+_SPRITE_SHEET_CACHE: Dict[
+    Tuple[str, Tuple[int, int], int, int],
+    Tuple[pygame.Surface, ...],
+] = {}
 
 
 def _surface_size(size: int | Tuple[int, int] | None) -> Tuple[int, int] | None:
@@ -81,3 +85,38 @@ def create_glow_sprite(size: int, color: Tuple[int, int, int], alpha: int) -> py
         if hasattr(surface, "fill"):
             surface.fill((*color, alpha))
     return surface
+
+
+def load_sprite_sheet(
+    name: str,
+    frame_size: Tuple[int, int],
+    columns: int,
+    rows: int,
+) -> Tuple[pygame.Surface, ...]:
+    cache_key = (name, frame_size, columns, rows)
+    if cache_key in _SPRITE_SHEET_CACHE:
+        return _SPRITE_SHEET_CACHE[cache_key]
+
+    sheet = _load_from_disk(name)
+    if sheet is None:
+        sheet = _create_placeholder((frame_size[0] * columns, frame_size[1] * rows))
+
+    frames = []
+    for row in range(rows):
+        for col in range(columns):
+            try:
+                frame = pygame.Surface(frame_size, getattr(pygame, "SRCALPHA", 0))
+            except TypeError:
+                frame = pygame.Surface(frame_size)
+            if hasattr(frame, "blit"):
+                rect = pygame.Rect(
+                    col * frame_size[0],
+                    row * frame_size[1],
+                    frame_size[0],
+                    frame_size[1],
+                )
+                frame.blit(sheet, (0, 0), rect)
+            frames.append(frame)
+
+    _SPRITE_SHEET_CACHE[cache_key] = tuple(frames)
+    return _SPRITE_SHEET_CACHE[cache_key]
