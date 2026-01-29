@@ -70,6 +70,9 @@ def ensure_pygame():
             def __repr__(self) -> str:
                 return f"Vector2({self.x}, {self.y})"
 
+            def copy(self) -> "Vector2":
+                return Vector2(self.x, self.y)
+
         class Sprite:
             def __init__(self, *groups):
                 self._groups = set()
@@ -116,6 +119,21 @@ def ensure_pygame():
             def polygon(*_args, **_kwargs):
                 return None
 
+        class mixer:
+            class Sound:
+                def __init__(self, *args, **kwargs):
+                    return None
+
+                def play(self, *args, **kwargs):
+                    return None
+
+                def set_volume(self, *args, **kwargs):
+                    return None
+
+            @staticmethod
+            def init(*_args, **_kwargs):
+                return None
+
         def init():
             return (0, 0)
 
@@ -127,6 +145,7 @@ def ensure_pygame():
         pygame.Surface = Surface
         pygame.key = key
         pygame.draw = draw
+        pygame.mixer = mixer
         pygame.init = init
         pygame.quit = quit
 
