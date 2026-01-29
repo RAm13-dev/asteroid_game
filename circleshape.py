@@ -25,13 +25,13 @@ class CircleShape(pygame.sprite.Sprite):
     
     def wrap_position(self):
         """Wrap position around screen edges"""
-        if self.position.x < -self.radius:
+        if self.position.x < 0:
             self.position.x = SCREEN_WIDTH + self.radius
-        elif self.position.x > SCREEN_WIDTH + self.radius:
+        elif self.position.x > SCREEN_WIDTH:
             self.position.x = -self.radius
-        if self.position.y < -self.radius:
+        if self.position.y < 0:
             self.position.y = SCREEN_HEIGHT + self.radius
-        elif self.position.y > SCREEN_HEIGHT + self.radius:
+        elif self.position.y > SCREEN_HEIGHT:
             self.position.y = -self.radius
     
     def collides_with(self, other):

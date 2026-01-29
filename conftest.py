@@ -2,11 +2,14 @@
 Pytest configuration and fixtures for game tests.
 """
 import pytest
-import pygame
 import os
 
 # Set headless mode for pygame
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+from pygame_fallback import ensure_pygame
+
+pygame = ensure_pygame()
 
 @pytest.fixture(scope="session", autouse=True)
 def pygame_init():

@@ -8,7 +8,9 @@ import os
 # Set headless mode for pygame
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
 
-import pygame
+from pygame_fallback import ensure_pygame
+
+pygame = ensure_pygame()
 pygame.init()
 
 # Import game modules

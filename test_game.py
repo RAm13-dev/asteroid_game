@@ -3,13 +3,17 @@ Comprehensive test suite for the Asteroids game.
 Run with: pytest test_game.py -v
 """
 import pytest
-import pygame
 import math
 from unittest.mock import Mock, patch, MagicMock
 
 # Initialize pygame for testing (headless mode)
 import os
+
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+from pygame_fallback import ensure_pygame
+
+pygame = ensure_pygame()
 pygame.init()
 
 from circleshape import CircleShape
