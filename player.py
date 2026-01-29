@@ -2,6 +2,7 @@ from collections import deque
 
 import pygame
 from assets import create_glow_sprite, load_sprite
+import audio
 from circleshape import CircleShape
 from constants import (
     PLAYER_RADIUS,
@@ -104,6 +105,7 @@ class Player(CircleShape):
         shot = Shot(self.position.x, self.position.y)
         direction = pygame.Vector2(0, -1).rotate(self.rotation)
         shot.velocity = direction * PLAYER_SHOOT_SPEED
+        audio.play_sound("shoot")
     
     def is_invincible(self):
         return self.invincibility > 0

@@ -2,6 +2,7 @@ import math
 import os
 import asteroidfield
 import pygame
+import audio
 from constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_LIVES,
     SCORE_SMALL_ASTEROID, SCORE_MEDIUM_ASTEROID, SCORE_LARGE_ASTEROID,
@@ -173,6 +174,8 @@ def main():
     print(f"Screen height: {SCREEN_HEIGHT}")
     
     pygame.init()
+    audio.init_audio()
+    audio.play_music()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Asteroids")
     clock = pygame.time.Clock()
@@ -233,6 +236,7 @@ def main():
                 if game_over:
                     if event.key == pygame.K_SPACE:
                         # Restart game
+                        audio.play_sound("ui")
                         player, asteroid_field = reset_game(updatable)
                         lives = PLAYER_LIVES
                         score = 0
@@ -240,6 +244,7 @@ def main():
                     elif event.key == pygame.K_ESCAPE:
                         return
                 elif event.key == pygame.K_p:
+                    audio.play_sound("ui")
                     paused = not paused
         
         if game_over:
@@ -270,6 +275,7 @@ def main():
             # Check player collision (only if not invincible)
             if not player.is_invincible() and asteroid.collides_with(player):
                 log_event("player_hit")
+                audio.play_sound("hit")
                 lives -= 1
                 if lives <= 0:
                     game_over = True
@@ -281,6 +287,7 @@ def main():
             for shot in list(shots):
                 if asteroid.collides_with(shot):
                     log_event("asteroid_shot")
+                    audio.play_sound("explode")
                     # Award points
                     score += get_asteroid_score(asteroid.radius)
                     impact_position = asteroid.position.copy()
