@@ -17,6 +17,7 @@ from player import Player
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from shot import Shot
+from asteroidfield import AsteroidField
 from constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS, ASTEROID_MIN_RADIUS,
     PLAYER_SPEED, PLAYER_TURN_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS,
@@ -365,6 +366,15 @@ class TestAsteroidField:
                     field.update(ASTEROID_SPAWN_RATE_SECONDS * 0.75)
 
         assert spawned["called"] is True
+
+
+class TestAsteroidField:
+    """Tests for AsteroidField difficulty scaling"""
+
+    def test_difficulty_multiplier_starts_at_one(self):
+        """Ensure difficulty multiplier is 1 at elapsed_time = 0"""
+        field = AsteroidField()
+        assert field.difficulty_multiplier(0) == 1.0
 
 
 class TestGameMechanics:
