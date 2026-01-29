@@ -73,3 +73,5 @@ Thumbs.db
 assets/tmp/
 savegames/
 screenshots/
+game_events.jsonl
+game_state.jsonl

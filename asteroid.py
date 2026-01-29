@@ -11,8 +11,12 @@ class Asteroid(CircleShape):
     
     def draw(self, screen):
         pygame.draw.circle(screen, "white", self.position, self.radius, LINE_WIDTH)
+    
     def update(self, dt):
         self.position += self.velocity * dt
+        # Wrap around screen edges
+        self.wrap_position()
+    
     def split(self):
         self.kill()
         if self.radius <= ASTEROID_MIN_RADIUS:
