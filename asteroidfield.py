@@ -4,23 +4,16 @@ import pygame
 
 from asteroid import Asteroid
 from constants import (
-    ASTEROID_DIFFICULTY_RAMP_SECONDS,
     ASTEROID_KINDS,
-    ASTEROID_MAX_DIFFICULTY_MULTIPLIER,
     ASTEROID_MAX_RADIUS,
     ASTEROID_MIN_RADIUS,
-    ASTEROID_ROTATION_MAX,
-    ASTEROID_ROTATION_MIN,
     ASTEROID_SPAWN_RATE_SECONDS,
-    ASTEROID_SPEED_MAX,
-    ASTEROID_SPEED_MIN,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
 
 
 class AsteroidField(pygame.sprite.Sprite):
-    """Spawns asteroids at random edges and ramps difficulty over time."""
     edges = [
         [
             pygame.Vector2(1, 0),
@@ -46,41 +39,37 @@ class AsteroidField(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self, self.containers)
-        # Track spawn timing and total elapsed play time.
         self.spawn_timer = 0.0
         self.elapsed_time = 0.0
 
+    @staticmethod
+    def difficulty_multiplier(elapsed_time):
+        if elapsed_time <= 0:
+            return 1.0
+        return 1.0 + (elapsed_time / 60.0)
+
     def spawn(self, radius, position, velocity):
-        """Create a new asteroid with the requested size and velocity."""
         asteroid = Asteroid(position.x, position.y, radius)
         asteroid.velocity = velocity
 
-    def update(self, dt):
-        """Advance timers and spawn new asteroids based on difficulty."""
-        self.spawn_timer += dt
-        self.elapsed_time += dt
+    def update(self, dt, elapsed_time=None):
+        if elapsed_time is None:
+            self.elapsed_time += dt
+            elapsed_time = self.elapsed_time
+        else:
+            self.elapsed_time = elapsed_time
 
-        # Ramp difficulty over time to increase pressure.
-        difficulty_multiplier = min(
-            1 + (self.elapsed_time / ASTEROID_DIFFICULTY_RAMP_SECONDS),
-            ASTEROID_MAX_DIFFICULTY_MULTIPLIER,
-        )
-        # Higher difficulty means more frequent spawns.
-        spawn_rate = ASTEROID_SPAWN_RATE_SECONDS / difficulty_multiplier
+        multiplier = self.difficulty_multiplier(elapsed_time)
+
+        self.spawn_timer += dt
+        spawn_rate = ASTEROID_SPAWN_RATE_SECONDS / multiplier
 
         if self.spawn_timer > spawn_rate:
             self.spawn_timer = 0
             edge = random.choice(self.edges)
-            # Randomize speed within bounds, then scale by difficulty.
-            speed = random.randint(ASTEROID_SPEED_MIN, ASTEROID_SPEED_MAX)
-            velocity = edge[0] * (speed * difficulty_multiplier)
-            # Introduce a slight rotation for variety.
-            velocity = velocity.rotate(
-                random.randint(ASTEROID_ROTATION_MIN, ASTEROID_ROTATION_MAX)
-            )
+            speed = random.randint(40, 100) * multiplier
+            velocity = edge[0] * speed
+            velocity = velocity.rotate(random.randint(-30, 30))
             position = edge[1](random.uniform(0, 1))
-            # Choose asteroid size variant based on defined kinds.
             kind = random.randint(1, ASTEROID_KINDS)
             self.spawn(ASTEROID_MIN_RADIUS * kind, position, velocity)
-
-    
