@@ -1,8 +1,8 @@
 from constants import (
-    LINE_WIDTH,
     ASTEROID_MIN_RADIUS,
-    ASTEROID_SPLIT_SPEED_MIN,
     ASTEROID_SPLIT_SPEED_MAX,
+    ASTEROID_SPLIT_SPEED_MIN,
+    LINE_WIDTH,
 )
 from circleshape import CircleShape
 from logger import log_event
@@ -28,16 +28,17 @@ class Asteroid(CircleShape):
         self.kill()
         if self.radius <= ASTEROID_MIN_RADIUS:
             return
-        log_event("asteroid_split")
-        angle = random.uniform(20, 50)
-        vel_p = self.velocity.rotate(angle)
-        vel_n = self.velocity.rotate(-angle)
-        new_radius = self.radius - ASTEROID_MIN_RADIUS
-        asteroid_p = Asteroid(self.position.x, self.position.y, new_radius)
-        asteroid_n = Asteroid(self.position.x, self.position.y, new_radius)
-        speed_multiplier = random.uniform(
-            ASTEROID_SPLIT_SPEED_MIN,
-            ASTEROID_SPLIT_SPEED_MAX,
-        )
-        asteroid_p.velocity = vel_p * speed_multiplier
-        asteroid_n.velocity = vel_n * speed_multiplier
+        else:
+            log_event("asteroid_split")
+            angle = random.uniform(20, 50)
+            split_speed_multiplier = random.uniform(
+                ASTEROID_SPLIT_SPEED_MIN,
+                ASTEROID_SPLIT_SPEED_MAX,
+            )
+            vel_p = self.velocity.rotate(angle)
+            vel_n = self.velocity.rotate(-angle)
+            new_radius = self.radius - ASTEROID_MIN_RADIUS
+            asteroid_p = Asteroid(self.position.x, self.position.y, new_radius)
+            asteroid_n = Asteroid(self.position.x, self.position.y, new_radius)
+            asteroid_p.velocity = vel_p * split_speed_multiplier
+            asteroid_n.velocity = vel_n * split_speed_multiplier

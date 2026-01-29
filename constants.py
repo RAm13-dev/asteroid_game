@@ -19,6 +19,14 @@ ASTEROID_KINDS = 3
 
 ASTEROID_SPAWN_RATE_SECONDS = 0.8
 
+# Difficulty scaling
+ASTEROID_DIFFICULTY_RAMP_SECONDS = 30.0
+ASTEROID_MAX_DIFFICULTY_MULTIPLIER = 3.0
+
+# Asteroid splitting speed multiplier bounds
+ASTEROID_SPLIT_SPEED_MIN = 1.1
+ASTEROID_SPLIT_SPEED_MAX = 1.4
+
 ASTEROID_MAX_RADIUS = ASTEROID_MIN_RADIUS * ASTEROID_KINDS
 
 # Asteroid field tuning (spawn movement + difficulty ramp)
