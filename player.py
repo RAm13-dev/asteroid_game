@@ -66,18 +66,18 @@ class Player(CircleShape):
     def update(self, dt):
         keys = pygame.key.get_pressed()
 
-        if keys.get(pygame.K_a, False):
+        if self._key_pressed(keys, pygame.K_a):
             self.rotate(-dt)
-        if keys.get(pygame.K_d, False):
+        if self._key_pressed(keys, pygame.K_d):
             self.rotate(dt)
         self._thrusting = False
-        if keys.get(pygame.K_w, False):
+        if self._key_pressed(keys, pygame.K_w):
             self.move(dt)
             self._thrusting = True
-        if keys.get(pygame.K_s, False):
+        if self._key_pressed(keys, pygame.K_s):
             self.move(-dt)
             self._thrusting = True
-        if keys.get(pygame.K_SPACE, False) and self.cooldown == 0:
+        if self._key_pressed(keys, pygame.K_SPACE) and self.cooldown == 0:
             self.shoot()
             self.cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
         
@@ -94,6 +94,14 @@ class Player(CircleShape):
         # Wrap around screen edges
         self.wrap_position()
         self._trail.append((self.position.copy(), self.rotation))
+
+    @staticmethod
+    def _key_pressed(keys, key):
+        if keys is None:
+            return False
+        if hasattr(keys, "get"):
+            return keys.get(key, False)
+        return bool(keys[key])
     
     def move(self, dt):
         unit_vector = pygame.Vector2(0, -1)
