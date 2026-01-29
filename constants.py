@@ -1,15 +1,18 @@
+# Screen dimensions
 SCREEN_WIDTH = 1280
 
 SCREEN_HEIGHT = 720
 
-PLAYER_RADIUS = 20 #radius of the player's ship
+# Player ship sizing and movement
+PLAYER_RADIUS = 20  # radius of the player's ship
 
-LINE_WIDTH = 2 # the width of the lines that draw the player's ship
+LINE_WIDTH = 2  # the width of the lines that draw the player's ship
 
 PLAYER_TURN_SPEED = 300
 
 PLAYER_SPEED = 200
 
+# Base asteroid sizing and spawn cadence
 ASTEROID_MIN_RADIUS = 20
 
 ASTEROID_KINDS = 3
@@ -18,13 +21,26 @@ ASTEROID_SPAWN_RATE_SECONDS = 0.8
 
 ASTEROID_MAX_RADIUS = ASTEROID_MIN_RADIUS * ASTEROID_KINDS
 
+# Asteroid field tuning (spawn movement + difficulty ramp)
+ASTEROID_SPEED_MIN = 40
+ASTEROID_SPEED_MAX = 100
+ASTEROID_ROTATION_MIN = -30
+ASTEROID_ROTATION_MAX = 30
+# Child asteroid speed multiplier when splitting
+ASTEROID_SPLIT_SPEED_MIN = 1.05
+ASTEROID_SPLIT_SPEED_MAX = 1.35
+# Difficulty increases over time to add pressure
+ASTEROID_DIFFICULTY_RAMP_SECONDS = 20.0
+ASTEROID_MAX_DIFFICULTY_MULTIPLIER = 2.0
+
+# Shot configuration
 SHOT_RADIUS = 5 
 
 PLAYER_SHOOT_SPEED = 500
 
 PLAYER_SHOOT_COOLDOWN_SECONDS = 0.3
 
-# Gameplay constants
+# Gameplay constants (survivability)
 PLAYER_LIVES = 3
 PLAYER_INVINCIBILITY_SECONDS = 2.0
 SHOT_LIFETIME_SECONDS = 2.0
