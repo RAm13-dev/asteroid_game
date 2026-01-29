@@ -66,3 +66,18 @@ def load_sprite(name: str, size: int | Tuple[int, int] | None = None) -> pygame.
 
     _SPRITE_CACHE[cache_key] = image
     return image
+
+
+def create_glow_sprite(size: int, color: Tuple[int, int, int], alpha: int) -> pygame.Surface:
+    """Create a circular glow sprite with the given size, color, and alpha."""
+    try:
+        surface = pygame.Surface((size, size), getattr(pygame, "SRCALPHA", 0))
+    except TypeError:
+        surface = pygame.Surface((size, size))
+    radius = size // 2
+    if hasattr(pygame, "draw") and hasattr(pygame.draw, "circle"):
+        pygame.draw.circle(surface, (*color, alpha), (radius, radius), radius)
+    else:
+        if hasattr(surface, "fill"):
+            surface.fill((*color, alpha))
+    return surface
