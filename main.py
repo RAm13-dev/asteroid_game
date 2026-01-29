@@ -7,6 +7,7 @@ from constants import (
     SCORE_SMALL_ASTEROID, SCORE_MEDIUM_ASTEROID, SCORE_LARGE_ASTEROID,
     BLUR_SCALE,
 )
+from background import build_background_layers
 from logger import log_state
 from player import Player
 from asteroid import Asteroid
@@ -138,8 +139,10 @@ def apply_soft_blur(surface):
     scaled = pygame.transform.smoothscale(surface, scaled_size)
     return pygame.transform.smoothscale(scaled, (width, height))
 
-def render_scene(target_surface, drawable, player):
+def render_scene(target_surface, drawable, player, background_layers):
     target_surface.fill("black")
+    for layer in background_layers:
+        layer.draw(target_surface)
     for obj in drawable:
         obj.draw(target_surface)
     player.draw(target_surface)
@@ -199,6 +202,7 @@ def main():
     
     # Initialize game
     player, asteroid_field = reset_game(updatable)
+    background_layers = build_background_layers()
     lives = PLAYER_LIVES
     score = 0
     displayed_lives = float(lives)
@@ -233,7 +237,7 @@ def main():
         
         if paused:
             # Render game in background, then overlay pause text
-            render_scene(frame_buffer, drawable, player)
+            render_scene(frame_buffer, drawable, player, background_layers)
             blurred = apply_soft_blur(frame_buffer)
             screen.blit(blurred, (0, 0))
             draw_hud(screen, hud_surface, displayed_lives, displayed_score, hud_font, hud_small_font, hud_icons, player.is_invincible())
@@ -247,6 +251,8 @@ def main():
         
         # Update game objects
         updatable.update(dt)
+        for layer in background_layers:
+            layer.update(dt)
         
         # Check collisions
         for asteroid in list(asteroids):
@@ -274,7 +280,7 @@ def main():
         displayed_score = smooth_value(displayed_score, score, dt, speed=6.0)
         
         # Render
-        render_scene(frame_buffer, drawable, player)
+        render_scene(frame_buffer, drawable, player, background_layers)
         blurred = apply_soft_blur(frame_buffer)
         screen.blit(blurred, (0, 0))
         
