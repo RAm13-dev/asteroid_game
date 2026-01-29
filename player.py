@@ -1,9 +1,15 @@
 import pygame
+from assets import load_sprite
 from circleshape import CircleShape
 from constants import (
-    PLAYER_RADIUS, LINE_WIDTH, PLAYER_TURN_SPEED, PLAYER_SPEED, 
-    PLAYER_SHOOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS, 
-    PLAYER_INVINCIBILITY_SECONDS, SCREEN_WIDTH, SCREEN_HEIGHT
+    PLAYER_RADIUS,
+    PLAYER_TURN_SPEED,
+    PLAYER_SPEED,
+    PLAYER_SHOOT_SPEED,
+    PLAYER_SHOOT_COOLDOWN_SECONDS,
+    PLAYER_INVINCIBILITY_SECONDS,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
 )
 from shot import Shot
 
@@ -13,6 +19,8 @@ class Player(CircleShape):
         self.rotation = 0
         self.cooldown = 0
         self.invincibility = 0.0
+        self._sprite = load_sprite("player", self.radius * 2)
+        self._rotation_cache = {}
     
     def triangle(self):
         forward = pygame.Vector2(0, -1).rotate(self.rotation)
@@ -25,7 +33,21 @@ class Player(CircleShape):
     def draw(self, screen):
         # Flash when invincible (draw every other frame)
         if self.invincibility <= 0 or int(self.invincibility * 10) % 2 == 0:
-            pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
+            sprite = self._get_rotated_sprite()
+            if hasattr(screen, "blit"):
+                rect = sprite.get_rect(center=self.position)
+                screen.blit(sprite, rect)
+
+    def _get_rotated_sprite(self):
+        angle = int(self.rotation) % 360
+        if angle in self._rotation_cache:
+            return self._rotation_cache[angle]
+        if hasattr(pygame, "transform") and hasattr(pygame.transform, "rotate"):
+            rotated = pygame.transform.rotate(self._sprite, angle)
+        else:
+            rotated = self._sprite
+        self._rotation_cache[angle] = rotated
+        return rotated
     
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt

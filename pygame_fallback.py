@@ -96,8 +96,15 @@ def ensure_pygame():
                 return item in self._sprites
 
         class Surface:
-            def __init__(self, size):
+            def __init__(self, size, *_args, **_kwargs):
                 self.size = size
+
+            def fill(self, *_args, **_kwargs):
+                return None
+
+            def get_rect(self, **kwargs):
+                center = kwargs.get("center", (0, 0))
+                return types.SimpleNamespace(center=center)
 
         class key:
             @staticmethod
