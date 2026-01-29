@@ -1,4 +1,5 @@
-import sys
+import math
+import os
 import asteroidfield
 import pygame
 from constants import (
@@ -13,6 +14,43 @@ from shot import Shot
 from asteroidfield import AsteroidField
 from logger import log_event
 
+# Add your custom assets here:
+# - Font: assets/fonts/PressStart2P-Regular.ttf (or update HUD_FONT_PATH)
+# - Icons: assets/icons/heart.png and assets/icons/shield.png (PNG/SVG->PNG)
+HUD_FONT_PATH = os.path.join("assets", "fonts", "PressStart2P-Regular.ttf")
+HEART_ICON_PATH = os.path.join("assets", "icons", "heart.png")
+SHIELD_ICON_PATH = os.path.join("assets", "icons", "shield.png")
+
+def make_heart_icon(size):
+    surface = pygame.Surface((size, size), pygame.SRCALPHA)
+    color = (255, 72, 92, 255)
+    radius = int(size * 0.28)
+    pygame.draw.circle(surface, color, (int(size * 0.35), int(size * 0.35)), radius)
+    pygame.draw.circle(surface, color, (int(size * 0.65), int(size * 0.35)), radius)
+    points = [
+        (int(size * 0.18), int(size * 0.38)),
+        (int(size * 0.82), int(size * 0.38)),
+        (int(size * 0.5), int(size * 0.9)),
+    ]
+    pygame.draw.polygon(surface, color, points)
+    return surface
+
+def make_shield_icon(size):
+    surface = pygame.Surface((size, size), pygame.SRCALPHA)
+    fill = (0, 120, 200, 200)
+    outline = (0, 200, 255, 255)
+    points = [
+        (int(size * 0.5), int(size * 0.08)),
+        (int(size * 0.85), int(size * 0.2)),
+        (int(size * 0.8), int(size * 0.65)),
+        (int(size * 0.5), int(size * 0.92)),
+        (int(size * 0.2), int(size * 0.65)),
+        (int(size * 0.15), int(size * 0.2)),
+    ]
+    pygame.draw.polygon(surface, fill, points)
+    pygame.draw.polygon(surface, outline, points, width=2)
+    return surface
+
 def get_asteroid_score(radius):
     """Calculate score based on asteroid size"""
     if radius <= 20:
@@ -22,15 +60,42 @@ def get_asteroid_score(radius):
     else:
         return SCORE_LARGE_ASTEROID
 
-def draw_ui(screen, lives, score, font):
-    """Draw UI elements (lives, score)"""
-    # Draw lives
-    lives_text = font.render(f"Lives: {lives}", True, "white")
-    screen.blit(lives_text, (10, 10))
-    
-    # Draw score
-    score_text = font.render(f"Score: {score}", True, "white")
-    screen.blit(score_text, (10, 40))
+def smooth_value(current, target, dt, speed=8.0):
+    """Smoothly interpolate values over time."""
+    if current == target:
+        return current
+    blend = 1 - math.exp(-speed * dt)
+    return current + (target - current) * blend
+
+def draw_hud(screen, hud_surface, lives, score, font, small_font, icons, shield_active):
+    """Draw HUD panel elements on a separate layer."""
+    hud_surface.fill((0, 0, 0, 0))
+    panel_rect = pygame.Rect(20, 20, 320, 120)
+    pygame.draw.rect(hud_surface, (12, 16, 26, 180), panel_rect, border_radius=12)
+    pygame.draw.rect(hud_surface, (120, 180, 255, 200), panel_rect, width=2, border_radius=12)
+
+    score_label = small_font.render("Score", True, (190, 210, 255))
+    score_value = font.render(f"{int(score):,}", True, "white")
+    hud_surface.blit(score_label, (panel_rect.x + 16, panel_rect.y + 12))
+    hud_surface.blit(score_value, (panel_rect.x + 16, panel_rect.y + 34))
+
+    health_label = small_font.render("Health", True, (255, 200, 200))
+    health_value = font.render(f"{int(lives)}", True, "white")
+    hud_surface.blit(health_label, (panel_rect.x + 16, panel_rect.y + 72))
+    hud_surface.blit(health_value, (panel_rect.x + 16, panel_rect.y + 92))
+
+    heart_icon, shield_icon = icons
+    icon_y = panel_rect.y + 88
+    icon_x = panel_rect.x + 120
+    for i in range(max(0, int(lives))):
+        hud_surface.blit(heart_icon, (icon_x + i * 26, icon_y))
+
+    shield_alpha = 255 if shield_active else 80
+    shield_icon = shield_icon.copy()
+    shield_icon.set_alpha(shield_alpha)
+    hud_surface.blit(shield_icon, (panel_rect.right - 40, panel_rect.y + 12))
+
+    screen.blit(hud_surface, (0, 0))
 
 def draw_game_over(screen, score, font, big_font):
     """Draw game over screen"""
@@ -101,10 +166,24 @@ def main():
     pygame.display.set_caption("Asteroids")
     clock = pygame.time.Clock()
     frame_buffer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    hud_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     
-    # Initialize font
-    font = pygame.font.Font(None, 36)
-    big_font = pygame.font.Font(None, 72)
+    # Initialize font (drop your custom TTF into HUD_FONT_PATH)
+    font_path = HUD_FONT_PATH if os.path.exists(HUD_FONT_PATH) else None
+    hud_font = pygame.font.Font(font_path, 28)
+    hud_small_font = pygame.font.Font(font_path, 16)
+    font = pygame.font.Font(font_path, 32)
+    big_font = pygame.font.Font(font_path, 64)
+
+    if os.path.exists(HEART_ICON_PATH) and os.path.exists(SHIELD_ICON_PATH):
+        heart_icon = pygame.image.load(HEART_ICON_PATH).convert_alpha()
+        shield_icon = pygame.image.load(SHIELD_ICON_PATH).convert_alpha()
+        heart_icon = pygame.transform.smoothscale(heart_icon, (22, 22))
+        shield_icon = pygame.transform.smoothscale(shield_icon, (24, 24))
+        hud_icons = (heart_icon, shield_icon)
+    else:
+        # Fallback to simple vector icons until you add PNGs.
+        hud_icons = (make_heart_icon(22), make_shield_icon(24))
     
     # Game state
     shots = pygame.sprite.Group()
@@ -122,6 +201,8 @@ def main():
     player, asteroid_field = reset_game(updatable)
     lives = PLAYER_LIVES
     score = 0
+    displayed_lives = float(lives)
+    displayed_score = float(score)
     paused = False
     game_over = False
     
@@ -155,7 +236,7 @@ def main():
             render_scene(frame_buffer, drawable, player)
             blurred = apply_soft_blur(frame_buffer)
             screen.blit(blurred, (0, 0))
-            draw_ui(screen, lives, score, font)
+            draw_hud(screen, hud_surface, displayed_lives, displayed_score, hud_font, hud_small_font, hud_icons, player.is_invincible())
             draw_pause(screen, font)
             pygame.display.flip()
             clock.tick(60)
@@ -188,6 +269,9 @@ def main():
                     shot.kill()
                     asteroid.split()
                     break
+
+        displayed_lives = smooth_value(displayed_lives, lives, dt, speed=10.0)
+        displayed_score = smooth_value(displayed_score, score, dt, speed=6.0)
         
         # Render
         render_scene(frame_buffer, drawable, player)
@@ -195,7 +279,7 @@ def main():
         screen.blit(blurred, (0, 0))
         
         # Draw UI
-        draw_ui(screen, lives, score, font)
+        draw_hud(screen, hud_surface, displayed_lives, displayed_score, hud_font, hud_small_font, hud_icons, player.is_invincible())
         
         pygame.display.flip()
 
