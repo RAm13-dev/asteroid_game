@@ -15,12 +15,20 @@ pygame.init()
 from circleshape import CircleShape
 from player import Player
 from asteroid import Asteroid
+from asteroidfield import AsteroidField
 from shot import Shot
 from constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS, ASTEROID_MIN_RADIUS,
     PLAYER_SPEED, PLAYER_TURN_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS,
     PLAYER_INVINCIBILITY_SECONDS, SHOT_LIFETIME_SECONDS,
-    SCORE_SMALL_ASTEROID, SCORE_MEDIUM_ASTEROID, SCORE_LARGE_ASTEROID
+    ASTEROID_DIFFICULTY_RAMP_SECONDS,
+    ASTEROID_MAX_DIFFICULTY_MULTIPLIER,
+    ASTEROID_SPAWN_RATE_SECONDS,
+    ASTEROID_SPLIT_SPEED_MAX,
+    ASTEROID_SPLIT_SPEED_MIN,
+    SCORE_SMALL_ASTEROID,
+    SCORE_MEDIUM_ASTEROID,
+    SCORE_LARGE_ASTEROID,
 )
 
 
@@ -369,6 +377,79 @@ class TestIntegration:
         assert player.position.x > 0
         assert shot.position.x < SCREEN_WIDTH
         assert asteroid.position.y > 0
+
+
+class TestAsteroidDifficultyScaling:
+    """Tests for asteroid difficulty and spawning behavior"""
+
+    def setup_method(self):
+        AsteroidField.containers = pygame.sprite.Group()
+
+    def test_asteroidfield_difficulty_scaling(self):
+        """Test difficulty scaling caps and spawn rate decreases"""
+        field = AsteroidField()
+        base_spawn_rate = ASTEROID_SPAWN_RATE_SECONDS
+
+        with patch("asteroidfield.random.choice", return_value=field.edges[0]), \
+            patch("asteroidfield.random.randint", return_value=40), \
+            patch("asteroidfield.random.uniform", return_value=0.5), \
+            patch.object(field, "spawn"):
+            field.update(ASTEROID_DIFFICULTY_RAMP_SECONDS + 1.0)
+
+        assert field.difficulty_multiplier <= ASTEROID_MAX_DIFFICULTY_MULTIPLIER
+        assert field.spawn_rate < base_spawn_rate
+
+    def test_asteroid_spawn_velocity_scaled(self):
+        """Test that spawned asteroid velocity scales with difficulty"""
+        field = AsteroidField()
+        field.elapsed_time = ASTEROID_DIFFICULTY_RAMP_SECONDS
+        field.spawn_timer = 1.0
+
+        with patch("asteroidfield.random.choice", return_value=field.edges[0]), \
+            patch("asteroidfield.random.randint", side_effect=[50, 0, 1]), \
+            patch("asteroidfield.random.uniform", return_value=0.5), \
+            patch.object(field, "spawn") as mock_spawn:
+            field.update(0.0)
+
+        assert mock_spawn.called
+        velocity = mock_spawn.call_args[0][2]
+        expected_speed = 50 * field.difficulty_multiplier
+        assert velocity == pygame.Vector2(expected_speed, 0)
+
+    def test_asteroid_split_speed_multiplier_bounds(self):
+        """Test split speed multiplier stays within configured bounds"""
+        base_velocity = pygame.Vector2(100, 0)
+        created = []
+
+        class DummyAsteroid:
+            def __init__(self, x, y, radius):
+                self.position = pygame.Vector2(x, y)
+                self.radius = radius
+                self.velocity = pygame.Vector2()
+                created.append(self)
+
+        asteroid_min = Asteroid(100, 100, 60)
+        asteroid_min.velocity = base_velocity
+
+        with patch("asteroid.random.uniform", side_effect=[30, ASTEROID_SPLIT_SPEED_MIN]), \
+            patch("asteroid.Asteroid", DummyAsteroid):
+            asteroid_min.split()
+
+        min_speeds = [child.velocity.length() for child in created]
+        assert min_speeds
+        assert all(speed == base_velocity.length() * ASTEROID_SPLIT_SPEED_MIN for speed in min_speeds)
+
+        created.clear()
+        asteroid_max = Asteroid(100, 100, 60)
+        asteroid_max.velocity = base_velocity
+
+        with patch("asteroid.random.uniform", side_effect=[30, ASTEROID_SPLIT_SPEED_MAX]), \
+            patch("asteroid.Asteroid", DummyAsteroid):
+            asteroid_max.split()
+
+        max_speeds = [child.velocity.length() for child in created]
+        assert max_speeds
+        assert all(speed == base_velocity.length() * ASTEROID_SPLIT_SPEED_MAX for speed in max_speeds)
 
 
 if __name__ == "__main__":
